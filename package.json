@@ -1,0 +1,17 @@
+{
+  "name": "spotify-sort-helper",
+  "packageManager": "yarn@4.9.2",
+  "dependencies": {
+    "@inquirer/prompts": "^7.5.3",
+    "fast-fuzzy": "^1.12.0",
+    "typescript": "^5.8.3",
+    "wikipedia": "^2.1.2",
+    "wtf_wikipedia": "^10.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4"
+  },
+  "scripts": {
+    "start": "yarn tsc && yarn node dist/index.js"
+  }
+}
