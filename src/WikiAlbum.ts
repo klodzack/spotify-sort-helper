@@ -2,6 +2,7 @@ import wikipedia from 'wtf_wikipedia';
 import type { Sentence } from 'wtf_wikipedia';
 import { getInfoboxGenres } from './WikiHelpers';
 import { IGenred } from './IGenred';
+import { WikiBottleneck } from './WikiBottleneck';
 
 const wikiAlbumCache = new Map<string | number, WikiAlbum | null>();
 
@@ -20,7 +21,7 @@ export class WikiAlbum implements IGenred {
         const cached = wikiAlbumCache.get(id);
         if (cached) return cached;
 
-        const doc = await wikipedia.fetch(id);
+        const doc = await WikiBottleneck.schedule(() => wikipedia.fetch(id));
         if (!doc) return null;
 
         const description = doc.description();

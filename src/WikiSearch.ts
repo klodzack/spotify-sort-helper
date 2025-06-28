@@ -6,6 +6,9 @@ import { Song } from "./Song";
 import { WikiArtist } from "./WikiArtist";
 import { WikiAlbum } from "./WikiAlbum";
 import { IGenred } from "./IGenred";
+import { WikiBottleneck } from "./WikiBottleneck";
+import { ConsoleBottleneck, consoleBottleneckLog } from "./ConsoleBottleneck";
+import { Console } from "console";
 
 export class WikiSearch {
     private constructor() {}
@@ -24,7 +27,10 @@ export class WikiSearch {
             prompter: (genred: T) => { name: string, description: string },
         }
     ): Promise<T | null> {
-        const searchResult = await wikipedia.search(query, { limit: 30 });
+        const searchResult = await WikiBottleneck.schedule(async () => {
+            consoleBottleneckLog(`Searching Wikipedia for ${JSON.stringify(query)}`);
+            return await wikipedia.search(query, { limit: 30 });
+        });
         let results: { genred: T, match: number }[] = [];
 
         // Do the first two sequentially, return immediately if we find a perfect match
@@ -59,7 +65,7 @@ export class WikiSearch {
         if (results[0].match > 0.92) return results[0].genred;
 
         // Prompt
-        return await select({
+        return await ConsoleBottleneck.schedule(() => select({
             message: `Which of these is ${query}?`,
             choices: [
                 ...results.map(result => ({
@@ -72,7 +78,7 @@ export class WikiSearch {
                     value: null,
                 }   
             ]
-        });
+        }));
     }
 
     static async searchSong({ title, artist }: Song) {

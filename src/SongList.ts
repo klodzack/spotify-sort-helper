@@ -15,9 +15,11 @@ export class SongList {
         const genres = new Map<string, Song[]>();
         const unknownSongs: Song[] = [];
 
-        for (const song of this.songs) {
-            console.log(`Looking up ${song.title} by ${song.artist}...`);
-            const songGenres = await song.getGenres();
+        const results = await Promise.all(this.songs.map(async song => ({
+            song,
+            genres: await song.getGenres()
+        })));
+        for (const { song, genres: songGenres } of results) {
             if (!songGenres) {
                 unknownSongs.push(song);
                 continue;
