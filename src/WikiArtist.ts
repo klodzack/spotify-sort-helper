@@ -1,8 +1,9 @@
 import wikipedia from 'wtf_wikipedia';
 import type { Sentence } from 'wtf_wikipedia';
 import { getInfoboxGenres } from './WikiHelpers';
+import { IGenred } from './IGenred';
 
-export class WikiArtist {
+export class WikiArtist implements IGenred {
     private constructor(
         public readonly name: string,
         public readonly description: string,

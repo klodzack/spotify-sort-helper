@@ -1,11 +1,11 @@
 import { WikiSearch } from "./WikiSearch";
 
 export class Song {
-    constructor(public title: string, public artist: string) {}
+    constructor(public title: string, public album: string | null, public artist: string) {}
 
     public async getGenres(): Promise<string[] | null> {
-        const wikiSong = await WikiSearch.search(this);
-        if (wikiSong) return wikiSong.genres;
+        const genred = await WikiSearch.search(this);
+        if (genred) return genred.genres;
         return null;
     }
 }

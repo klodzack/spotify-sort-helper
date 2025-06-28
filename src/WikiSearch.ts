@@ -4,12 +4,15 @@ import { WikiSong } from "./WikiSong";
 import { select, Separator } from '@inquirer/prompts';
 import { Song } from "./Song";
 import { WikiArtist } from "./WikiArtist";
+import { WikiAlbum } from "./WikiAlbum";
+import { IGenred } from "./IGenred";
 
 export class WikiSearch {
     private constructor() {}
 
-    static async search(song: Song): Promise<WikiSong | WikiArtist | null> {
+    static async search(song: Song): Promise<IGenred | null> {
         return await WikiSearch.searchSong(song) ??
+            (song.album ? await WikiSearch.searchAlbum(song) : null) ??
             await WikiSearch.searchArtist(song.artist);
     }
 
@@ -32,8 +35,25 @@ export class WikiSearch {
         return WikiSearch.promptSongList(songs.map(s => s.song));
     }
 
+    static async searchAlbum({ artist, album }: Song) {
+        const searchResult = await wikipedia.search(`${album} (${artist} album)`, { limit: 30 });
+        let albums: { album: WikiAlbum, match: number }[] = [];
+        for (const doc of searchResult.results) {
+            const wikiAlbum = await WikiAlbum.fromWiki(doc.pageid);
+            if (!wikiAlbum) continue;
+
+            const match = WikiSearch.checkMatch(wikiAlbum.name, artist);
+
+            if (match > 0.92) return wikiAlbum;
+            if (match > 0.7)
+                albums.push({ album: wikiAlbum, match });
+        }
+        if (!albums.length) return null;
+        return WikiSearch.promptAlbumList(albums.map(s => s.album));
+    }
+
     static async searchArtist(artist: string) {
-        const searchResult = await wikipedia.search(`${artist}`, { limit: 30 });
+        const searchResult = await wikipedia.search(artist, { limit: 30 });
         let artists: { artist: WikiArtist, match: number }[] = [];
         for (const doc of searchResult.results) {
             const wikiArtist = await WikiArtist.fromWiki(doc.pageid);
@@ -82,6 +102,24 @@ export class WikiSearch {
                     name: artist.name,
                     description: artist.description,
                     value: artist,
+                })),
+                new Separator(),
+                {
+                    name: 'None of these',
+                    value: null,
+                }   
+            ]
+        });
+    }
+
+    private static async promptAlbumList(albuma: WikiAlbum[]) {
+        return await select({
+            message: 'Which of these albums do you mean?',
+            choices: [
+                ...albuma.map(album => ({
+                    name: `${album.name} - ${album.artist}`,
+                    description: album.description,
+                    value: album,
                 })),
                 new Separator(),
                 {

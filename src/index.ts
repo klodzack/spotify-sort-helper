@@ -13,7 +13,7 @@ import { SongList } from './SongList';
         new Song('Birthday', 'The Beatles'),
         new Song('Blackbird', 'The Beatles'),
         */
-        new Song('Boys', 'The Beatles'),
+        new Song('Boys', 'Please Please Me', 'The Beatles'),
         /*
         new Song('Daydream', 'The Lovin\' Spoonful'),
         new Song('Daydream Believer', 'The Monkees'),
