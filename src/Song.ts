@@ -4,7 +4,7 @@ export class Song {
     constructor(public title: string, public artist: string) {}
 
     public async getGenres(): Promise<string[] | null> {
-        const wikiSong = await WikiSearch.search({ title: this.title, artist: this.artist });
+        const wikiSong = await WikiSearch.search(this);
         if (wikiSong) return wikiSong.genres;
         return null;
     }
