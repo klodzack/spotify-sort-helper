@@ -3,15 +3,23 @@ import type { Sentence } from 'wtf_wikipedia';
 import { getInfoboxGenres } from './WikiHelpers';
 import { IGenred } from './IGenred';
 
+const wikiAlbumCache = new Map<string | number, WikiAlbum | null>();
+
 export class WikiAlbum implements IGenred {
     private constructor(
+        public readonly wikiId: string | number,
         public readonly name: string,
         public readonly description: string,
         public readonly artist: string,
         public readonly genres: string[],
-    ) {}
+    ) {
+        wikiAlbumCache.set(wikiId, this);
+    }
 
     static async fromWiki(id: string | number) {
+        const cached = wikiAlbumCache.get(id);
+        if (cached) return cached;
+
         const doc = await wikipedia.fetch(id);
         if (!doc) return null;
 
@@ -30,6 +38,7 @@ export class WikiAlbum implements IGenred {
         if (!genresList) return null;
 
         return new WikiAlbum(
+            id,
             name,
             description,
             artist,

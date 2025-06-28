@@ -4,6 +4,9 @@ import { SongList } from './SongList';
 (async () => {
     const list = new SongList([
         new Song('I Want to Hold Your Hand', 'Meet the Beatles!', 'The Beatles'),
+        new Song('I Want to Hold Your Hand', 'Meet the Beatles!', 'The Beatles'),
+        new Song('I Want to Hold Your Hand', 'Meet the Beatles!', 'The Beatles'),
+        new Song('I Want to Hold Your Hand', 'Meet the Beatles!', 'The Beatles'),
         new Song('A Hard Day\'s Night', 'A Hard Day\'s Night', 'The Beatles'),
         new Song('Day Tripper', 'Rubber Soul', 'The Beatles'),
         new Song('Ticket To Ride', 'Help!', 'The Beatles'),
