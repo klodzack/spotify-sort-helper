@@ -26,7 +26,9 @@ export class WikiSearch {
     ): Promise<T | null> {
         const searchResult = await wikipedia.search(query, { limit: 30 });
         let results: { genred: T, match: number }[] = [];
-        for (const doc of searchResult.results) {
+
+        // Do the first two sequentially, return immediately if we find a perfect match
+        for (const doc of searchResult.results.slice(0, 2)) {
             const genred = await lookup(doc.pageid);
             if (!genred) continue;
 
@@ -37,7 +39,24 @@ export class WikiSearch {
                 results.push({ genred, match });
         }
 
+        // Not in first two? Request the rest in parallel
+        await Promise.all(
+            searchResult.results.slice(2).map(async doc => {
+                const genred = await lookup(doc.pageid);
+                if (!genred) return;
+
+                const match = matcher(genred);
+                if (match > 0.7)
+                    results.push({ genred, match });
+            })
+        );
+
         if (!results.length) return null;
+
+        // Sort by match
+        results = results.sort((a, b) => b.match - a.match);
+        // If the best is above 0.92, return it
+        if (results[0].match > 0.92) return results[0].genred;
 
         // Prompt
         return await select({
