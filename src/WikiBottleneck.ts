@@ -2,5 +2,5 @@ import Bottleneck from 'bottleneck';
 
 export const WikiBottleneck = new Bottleneck({
     maxConcurrent: 4,
-    minTime: 200,
+    minTime: 100,
 });
