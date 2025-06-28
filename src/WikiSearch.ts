@@ -12,61 +12,91 @@ export class WikiSearch {
 
     static async search(song: Song): Promise<IGenred | null> {
         return await WikiSearch.searchSong(song) ??
-            (song.album ? await WikiSearch.searchAlbum(song) : null) ??
+            (song.album ? await WikiSearch.searchAlbum(song as Song & { album: string }) : null) ??
             await WikiSearch.searchArtist(song.artist);
     }
 
-    static async searchSong({ title, artist }: Song) {
-        const searchResult = await wikipedia.search(`${title} (${artist} song)`, { limit: 30 });
-        let songs: { song: WikiSong, match: number }[] = [];
+    private static async doSearch<T extends IGenred>(
+        { query, lookup, matcher, prompter }: {
+            query: string,
+            lookup: (id: number) => Promise<T | null>,
+            matcher: (genred: T) => number,
+            prompter: (genred: T) => { name: string, description: string },
+        }
+    ): Promise<T | null> {
+        const searchResult = await wikipedia.search(query, { limit: 30 });
+        let results: { genred: T, match: number }[] = [];
         for (const doc of searchResult.results) {
-            const song = await WikiSong.fromWiki(doc.pageid);
-            if (!song) continue;
+            const genred = await lookup(doc.pageid);
+            if (!genred) continue;
 
-            const match = (WikiSearch.checkMatch(song.title, title) +
-                       WikiSearch.checkMatch(song.artist, artist))/2;
+            const match = matcher(genred);
 
-            if (match > 0.92) return song;
+            if (match > 0.92) return genred;
             if (match > 0.7)
-                songs.push({ song, match });
+                results.push({ genred, match });
         }
 
-        if (!songs.length) return null;
-        return WikiSearch.promptSongList(songs.map(s => s.song));
+        if (!results.length) return null;
+
+        // Prompt
+        return await select({
+            message: `Which of these is ${query}?`,
+            choices: [
+                ...results.map(result => ({
+                    ...(prompter(result.genred)),
+                    value: result.genred,
+                })),
+                new Separator(),
+                {
+                    name: 'None of these',
+                    value: null,
+                }   
+            ]
+        });
     }
 
-    static async searchAlbum({ artist, album }: Song) {
-        const searchResult = await wikipedia.search(`${album} (${artist} album)`, { limit: 30 });
-        let albums: { album: WikiAlbum, match: number }[] = [];
-        for (const doc of searchResult.results) {
-            const wikiAlbum = await WikiAlbum.fromWiki(doc.pageid);
-            if (!wikiAlbum) continue;
+    static async searchSong({ title, artist }: Song) {
+        return await WikiSearch.doSearch({
+            query: `${title} (${artist} song)`,
+            async lookup(id) { return await WikiSong.fromWiki(id); },
+            matcher: wikiSong => (
+                WikiSearch.checkMatch(wikiSong.title, title) +
+                // Ignore album
+                WikiSearch.checkMatch(wikiSong.artist, artist)
+            ) / 2,
+            prompter: wikiSong => ({
+                name: `${wikiSong.title} - ${wikiSong.artist}`,
+                description: wikiSong.description,
+            }),
+        });
+    }
 
-            const match = WikiSearch.checkMatch(wikiAlbum.name, artist);
-
-            if (match > 0.92) return wikiAlbum;
-            if (match > 0.7)
-                albums.push({ album: wikiAlbum, match });
-        }
-        if (!albums.length) return null;
-        return WikiSearch.promptAlbumList(albums.map(s => s.album));
+    static async searchAlbum({ artist, album }: Song & { album: string }) {
+        return await WikiSearch.doSearch({
+            query: `${album} (${artist} album)`,
+            async lookup(id) { return await WikiAlbum.fromWiki(id); },
+            matcher: wikiAlbum => (
+                WikiSearch.checkMatch(wikiAlbum.name, album) +
+                WikiSearch.checkMatch(wikiAlbum.artist, artist)
+            ) / 2,
+            prompter: wikiAlbum => ({
+                name: `${wikiAlbum.name} - ${wikiAlbum.artist}`,
+                description: wikiAlbum.description,
+            }),
+        });
     }
 
     static async searchArtist(artist: string) {
-        const searchResult = await wikipedia.search(artist, { limit: 30 });
-        let artists: { artist: WikiArtist, match: number }[] = [];
-        for (const doc of searchResult.results) {
-            const wikiArtist = await WikiArtist.fromWiki(doc.pageid);
-            if (!wikiArtist) continue;
-
-            const match = WikiSearch.checkMatch(wikiArtist.name, artist);
-
-            if (match > 0.92) return wikiArtist;
-            if (match > 0.7)
-                artists.push({ artist: wikiArtist, match });
-        }
-        if (!artists.length) return null;
-        return WikiSearch.promptArtistList(artists.map(s => s.artist));
+        return await WikiSearch.doSearch({
+            query: artist,
+            async lookup(id) { return await WikiArtist.fromWiki(id); },
+            matcher: wikiArtist => WikiSearch.checkMatch(wikiArtist.name, artist),
+            prompter: wikiArtist => ({
+                name: wikiArtist.name,
+                description: wikiArtist.description,
+            }),
+        });
     }
 
     private static checkMatch(a: string, b: string): number {
@@ -74,59 +104,5 @@ export class WikiSearch {
             fuzzy(a, b),
             fuzzy(b, a),
         );
-    }
-
-    private static async promptSongList(songs: WikiSong[]) {
-        return await select({
-            message: 'Which of these songs do you mean?',
-            choices: [
-                ...songs.map(song => ({
-                    name: `${song.title} - ${song.artist}`,
-                    description: song.description,
-                    value: song,
-                })),
-                new Separator(),
-                {
-                    name: 'None of these',
-                    value: null,
-                }   
-            ]
-        });
-    }
-
-    private static async promptArtistList(artists: WikiArtist[]) {
-        return await select({
-            message: 'Which of these songs do you mean?',
-            choices: [
-                ...artists.map(artist => ({
-                    name: artist.name,
-                    description: artist.description,
-                    value: artist,
-                })),
-                new Separator(),
-                {
-                    name: 'None of these',
-                    value: null,
-                }   
-            ]
-        });
-    }
-
-    private static async promptAlbumList(albuma: WikiAlbum[]) {
-        return await select({
-            message: 'Which of these albums do you mean?',
-            choices: [
-                ...albuma.map(album => ({
-                    name: `${album.name} - ${album.artist}`,
-                    description: album.description,
-                    value: album,
-                })),
-                new Separator(),
-                {
-                    name: 'None of these',
-                    value: null,
-                }   
-            ]
-        });
     }
 }
