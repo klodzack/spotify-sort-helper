@@ -2,7 +2,8 @@ import { Song } from './Song';
 import { SongList } from './SongList';
 
 (async () => {
-    const list = new SongList([
+    /*
+    const list = await SongList.fromSongs([
         new Song('I Want to Hold Your Hand', 'Meet the Beatles!', 'The Beatles'),
         new Song('A Hard Day\'s Night', 'A Hard Day\'s Night', 'The Beatles'),
         new Song('Day Tripper', 'Rubber Soul', 'The Beatles'),
@@ -99,6 +100,8 @@ import { SongList } from './SongList';
         new Song('Waterloo Sunset', 'Something Else by The Kinks', 'The Kinks'),
         new Song('Lola', 'Lola Versus Powerman and the Moneygoround, Part One', 'The Kinks'),
     ]);
+    */
+    const list = await SongList.fromCsvFile(new URL('examples/example.csv', 'file:' + __dirname));
     const { genres, unknownSongs } = await list.getGenres();
     for (const genre of genres) {
         console.log(`Genre: ${genre.genre}`);
