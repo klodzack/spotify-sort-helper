@@ -1,24 +1,24 @@
 import wikipedia from 'wtf_wikipedia';
 import type { Sentence } from 'wtf_wikipedia';
 import { getInfoboxGenres } from './WikiHelpers';
-import { IGenred } from './IGenred';
-import { WikiBottleneck } from './WikiBottleneck';
+import { IGenred } from '../interfaces/IGenred';
+import { WikiBottleneck } from '../bottlenecks/WikiBottleneck';
 
-const wikiAlbumCache = new Map<string | number, WikiAlbum | null>();
+const wikiSongCache = new Map<string | number, WikiSong | null>();
 
-export class WikiAlbum implements IGenred {
+export class WikiSong implements IGenred {
     private constructor(
         public readonly wikiId: string | number,
-        public readonly name: string,
+        public readonly title: string,
         public readonly description: string,
         public readonly artist: string,
         public readonly genres: string[],
     ) {
-        wikiAlbumCache.set(wikiId, this);
+        wikiSongCache.set(wikiId, this);
     }
 
     static async fromWiki(id: string | number) {
-        const cached = wikiAlbumCache.get(id);
+        const cached = wikiSongCache.get(id);
         if (cached) return cached;
 
         const doc = await WikiBottleneck.schedule(() => wikipedia.fetch(id));
@@ -30,7 +30,7 @@ export class WikiAlbum implements IGenred {
         const [ infobox ] = doc.infoboxes();
         if (!infobox) return null;
 
-        const name = (infobox.get('name') as Sentence | null)?.text() ?? doc.title();
+        const title = (infobox.get('name') as Sentence | null)?.text() ?? doc.title();
 
         const artist = (infobox.get('artist') as Sentence | null)?.text();
         if (!artist) return null;
@@ -38,9 +38,9 @@ export class WikiAlbum implements IGenred {
         const genresList = getInfoboxGenres(infobox);
         if (!genresList) return null;
 
-        return new WikiAlbum(
+        return new WikiSong(
             id,
-            name,
+            title,
             description,
             artist,
             genresList,

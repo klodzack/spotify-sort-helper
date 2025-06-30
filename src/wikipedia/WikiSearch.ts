@@ -2,12 +2,12 @@ import wikipedia from "wikipedia";
 import { fuzzy } from 'fast-fuzzy';
 import { WikiSong } from "./WikiSong";
 import { select, Separator } from '@inquirer/prompts';
-import { Song } from "./Song";
+import { Song } from "../processing/Song";
 import { WikiArtist } from "./WikiArtist";
 import { WikiAlbum } from "./WikiAlbum";
-import { IGenred } from "./IGenred";
-import { WikiBottleneck } from "./WikiBottleneck";
-import { ConsoleBottleneck, consoleBottleneckLog } from "./ConsoleBottleneck";
+import { IGenred } from "../interfaces/IGenred";
+import { WikiBottleneck } from "../bottlenecks/WikiBottleneck";
+import { ConsoleBottleneck, consoleBottleneckLog } from "../bottlenecks/ConsoleBottleneck";
 import { Console } from "console";
 
 export class WikiSearch {

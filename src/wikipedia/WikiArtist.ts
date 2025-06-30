@@ -1,8 +1,8 @@
 import wikipedia from 'wtf_wikipedia';
 import type { Sentence } from 'wtf_wikipedia';
 import { getInfoboxGenres } from './WikiHelpers';
-import { IGenred } from './IGenred';
-import { WikiBottleneck } from './WikiBottleneck';
+import { IGenred } from '../interfaces/IGenred';
+import { WikiBottleneck } from '../bottlenecks/WikiBottleneck';
 
 const wikiArtistCache = new Map<string | number, WikiArtist | null>();
 

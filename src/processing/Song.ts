@@ -1,4 +1,4 @@
-import { WikiSearch } from "./WikiSearch";
+import { WikiSearch } from "../wikipedia/WikiSearch";
 
 export class Song {
     constructor(public title: string, public album: string | null, public artist: string) {}
