@@ -1,3 +1,5 @@
+import { lookaheadGenerator } from "../helpers/lookaheadGenerator";
+import { transformGenerator } from "../helpers/transformGenerator";
 import { ISongInput } from "../inputs/ISongInput";
 import { IOutputRecord } from "../interfaces/IOutputRecord";
 import { ICategorizedOutput } from "../outputs/ICategorizedOutput";
@@ -12,18 +14,8 @@ export class Processor {
     }
 
     async process() {
-        await this.output.write(this.getOutputRecords());
-    }
-
-    private async *getOutputRecords() {
-        for await (const song of this.input.read()) {
-            yield {
-                title: song.title,
-                album: song.album,
-                artist: song.artist,
-                genres: await song.getGenres(),
-            } as IOutputRecord;
-
-        }
+        const readStream = lookaheadGenerator(50, this.input.read());
+        const outputStream = lookaheadGenerator(20, transformGenerator(readStream, async (song) => { return await song.process(); }));
+        await this.output.write(outputStream);
     }
 }

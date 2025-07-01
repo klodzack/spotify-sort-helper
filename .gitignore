@@ -13,3 +13,5 @@
 .pnp.*
 
 dist/*
+# development output
+out.csv
