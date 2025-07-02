@@ -1079,6 +1079,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "spotify-sort-helper@workspace:."
   dependencies:
+    "@inquirer/core": "npm:^10.1.13"
     "@inquirer/prompts": "npm:^7.5.3"
     "@types/node": "npm:^24.0.4"
     bottleneck: "npm:^2.19.5"
