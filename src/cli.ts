@@ -30,9 +30,11 @@ export async function runCli() {
             break;
         }
         case 'memory': {
-            const title = await promptInput({ message: 'Song title:', default: 'Here Comes The Sun' });
-            const album = await promptInput({ message: 'Album:', default: 'Abbey Road' });
-            const artist = await promptInput({ message: 'Artist:', default: 'The Beatles' });
+            const title = await promptInput({ message: 'Song title:' });
+            if (!title) throw new Error('Missing title!');
+            const album = await promptInput({ message: 'Album:' });
+            const artist = await promptInput({ message: 'Artist:' });
+            if (!artist) throw new Error('Missing artist!');
             input = new MemoryInput([ new Song(title, album, artist) ]);
             break;
         }
