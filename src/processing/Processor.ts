@@ -1,7 +1,6 @@
 import { lookaheadGenerator } from "../helpers/lookaheadGenerator";
 import { transformGenerator } from "../helpers/transformGenerator";
 import { ISongInput } from "../inputs/ISongInput";
-import { IOutputRecord } from "../interfaces/IOutputRecord";
 import { ICategorizedOutput } from "../outputs/ICategorizedOutput";
 
 export class Processor {

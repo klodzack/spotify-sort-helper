@@ -16,6 +16,11 @@ export class ConsoleOutput implements ICategorizedOutput {
                 ),
                 `${chalk.blueBright('Artist: ')} ${outputRecord.artist}`,
                 ...(
+                    outputRecord.extraRecords
+                        ? [chalk.blueBright('Meta:'), ...Array.from(Object.entries(outputRecord.extraRecords)).map(([ key, value ]) => `  ${chalk.blue(key)}: ${value}`)]
+                        : []
+                ),
+                ...(
                     outputRecord.genres === null
                         ? [`${chalk.blueBright('Genres: ')} ${chalk.redBright('UNKNOWN!')}`]
                         : [

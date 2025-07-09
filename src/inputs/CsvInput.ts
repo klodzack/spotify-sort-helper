@@ -9,16 +9,36 @@ export class CsvInput implements ISongInput {
     async *read() {
         const readSteam = createReadStream(this.file);
         try {
-            let line = 0;
             for await (const row of readSteam.pipe(csv())) {
-                line++; // This will make the first row line 1 - that's ok, line 0 is the header
-                // Lowercase all the keys
-                const lowerLine = Object.fromEntries(
-                    Array.from(Object.entries(row))
-                        .map(([ key, value ]) => [key.toLocaleLowerCase(), value as string] as [string, string]));
-                if (!lowerLine.title) throw new Error('Missing Title column!');
-                if (!lowerLine.artist) throw new Error('Missing Artist column!');
-                yield new Song(lowerLine.title, lowerLine.album ?? null, lowerLine.artist);
+                let title: string | undefined = undefined;
+                let album: string | undefined = undefined;
+                let artist: string | undefined = undefined;
+                let extraRecords: Record<string, string> = {};
+                for (const [key, value] of Object.entries(row)) {
+                    switch(key.toLocaleLowerCase()) {
+                        case 'title':
+                            title = value as string;
+                            break;
+                        case 'album':
+                            album = value as string;
+                            break;
+                        case 'artist':
+                            artist = value as string;
+                            break;
+                        default:
+                            extraRecords[key] = value as string;
+                            break;
+                    }
+                }
+
+                if (!title) throw new Error('Missing Title column!');
+                if (!artist) throw new Error('Missing Artist column!');
+                yield new Song(
+                    title,
+                    album ?? null,
+                    artist,
+                    extraRecords,
+                );
             }
         } finally {
             readSteam.close();
