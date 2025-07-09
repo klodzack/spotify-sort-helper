@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { ICategorizedOutput } from './ICategorizedOutput';
 import { IOutputRecord } from '../interfaces/IOutputRecord';
 import { randomUUID } from 'node:crypto';
+import { nearestNeighbor } from '../utils/nearestNeighbor';
+import { fuzzy } from 'fast-fuzzy';
 
 const fs = Object.assign({}, fsI, fsP);
 
@@ -64,7 +66,7 @@ export class CsvOutput implements ICategorizedOutput {
 
         return {
             extraRecordKeys: Array.from(extraRecordKeys),
-            genres: Array.from(genres).sort(),
+            genres: nearestNeighbor(Array.from(genres), (a, b) => Math.max(fuzzy(a, b), fuzzy(b, a))),
         };
     }
 
