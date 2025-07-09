@@ -7,6 +7,11 @@ import { randomUUID } from 'node:crypto';
 
 const fs = Object.assign({}, fsI, fsP);
 
+interface ICollectedInfo {
+    extraRecordKeys: string[],
+    genres: string[],
+};
+
 export class CsvOutput implements ICategorizedOutput {
     private tmpFilePath = new URL(`file:${tmpdir()}/${randomUUID()}/tmp.ndjson`);
 
@@ -27,8 +32,9 @@ export class CsvOutput implements ICategorizedOutput {
     private async streamIntoTmpFile(
         steam: AsyncIterable<IOutputRecord>,
         cancelToken?: AbortSignal
-    ): Promise<string[]> {
+    ): Promise<ICollectedInfo> {
         // First pass: collect genre list and put records into a tmp file
+        const extraRecordKeys = new Set<string>();
         const genres = new Set<string>();
         await fs.mkdir(new URL('.', this.tmpFilePath));
         const tmpFileHandle = await fs.createWriteStream(this.tmpFilePath);
@@ -43,6 +49,12 @@ export class CsvOutput implements ICategorizedOutput {
                         genres.add(genre);
                     }
                 }
+                // Collect extra meta
+                if (record.extraRecords) {
+                    for (const key of Object.keys(record.extraRecords)) {
+                        extraRecordKeys.add(key);
+                    }
+                }
                 // Write record to tmp file
                 await tmpFileHandle.write(JSON.stringify(record) + '\n');
             }
@@ -50,7 +62,10 @@ export class CsvOutput implements ICategorizedOutput {
             await tmpFileHandle?.close();
         }
 
-        return Array.from(genres).sort();
+        return {
+            extraRecordKeys: Array.from(extraRecordKeys),
+            genres: Array.from(genres).sort(),
+        };
     }
 
     private async *streamOutOfTmpFile(): AsyncIterable<IOutputRecord> {
@@ -75,11 +90,14 @@ export class CsvOutput implements ICategorizedOutput {
         }
     }
 
-    private async writeOutputFile(genres: string[], stream: AsyncIterable<IOutputRecord>) {
+    private async writeOutputFile({ extraRecordKeys, genres }: ICollectedInfo, stream: AsyncIterable<IOutputRecord>) {
         const fileHandle = await fs.createWriteStream(this.filePath);
         try {
             // Write headers
             fileHandle.write('Title,Album,Artist,Err');
+            for (const key of extraRecordKeys) {
+                fileHandle.write(',' + this.csvEncode(key));
+            }
             for (const genre of genres) {
                 fileHandle.write(',' + this.csvEncode(genre));
             }
@@ -97,6 +115,11 @@ export class CsvOutput implements ICategorizedOutput {
                 fileHandle.write(this.csvEncode(record.artist));
                 fileHandle.write(',');
                 if (recordGenres === null) fileHandle.write('"!"');
+
+                for (const key of extraRecordKeys) {
+                    fileHandle.write(',');
+                    if (record.extraRecords?.[key]) fileHandle.write(this.csvEncode(record.extraRecords[key]));
+                }
 
                 for (const genre of genres) {
                     fileHandle.write(',');
